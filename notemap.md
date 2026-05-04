@@ -1,37 +1,44 @@
-# E-Commerce Project: Docker & Backend Migration Notemap
+# 🛒 E-Commerce Project: Architecture Migration History
 
-## 📦 Phase 1: Dockerization Setup
-- [x] Create `Dockerfile` for the Vite/React frontend.
-- [x] Create `.dockerignore` to keep image sizes small.
-- [x] Create `docker-compose.yml` with `frontend` and `db` services.
-- [ ] Test the frontend container locally: `docker-compose up --build frontend`.
+## 📖 Log: The Great Supabase Exodus
+*This document tracks the transition from a managed Supabase backend to a fully self-hosted Dockerized stack.*
 
-## 🗄️ Phase 2: Database Migration
-- [ ] Review the existing SQL migrations in `supabase/migrations/` to ensure they are compatible with standard PostgreSQL.
-- [ ] Map the SQL scripts into the Postgres container (handled via volumes in `docker-compose.yml`).
-- [ ] Start the database: `docker-compose up -d db`.
-- [ ] Verify tables (`categories`, `products`, etc.) are created successfully.
+### ✅ Phase 1: Docker Initialization
+- **Action:** Created `docker-compose.yml`.
+- **Details:** Set up a 3-tier architecture using Docker Compose:
+  1. `db`: Standard PostgreSQL 15 container.
+  2. `api`: Custom Node.js/Express backend container.
+  3. `frontend`: Vite/React app served via Nginx.
+- **Action:** Created `Dockerfile` in the root for the Vite frontend.
+- **Action:** Created `init.sql` to automatically map database tables (`users`, `categories`, `products`) on the first Docker run.
 
-## 🔌 Phase 3: Backend API (Crucial Step)
-*Since Supabase acts as a BaaS, moving away from it requires a backend to serve the frontend.*
-- [ ] Choose a backend framework (e.g., Node.js with Express/NestJS or Python with FastAPI).
-- [ ] Initialize the backend directory and Dockerize it.
-- [ ] Add the new backend service to `docker-compose.yml`.
-- [ ] Replicate Supabase Auth logic (consider using JWTs and standard password hashing, or an alternative like NextAuth/Passport).
-- [ ] Create REST/GraphQL endpoints for:
-  - [ ] Products (`productService.ts`)
-  - [ ] Cart & Orders (`cartService.ts`, `orderService.ts`)
-  - [ ] Reviews (`reviewService.ts`)
+### ✅ Phase 2: Custom API (Backend) Built
+- **Action:** Created `/api` directory.
+- **Details:** Built a custom Node.js/Express server to replace Supabase's BaaS functionality.
+  - Set up `multer` to handle local image uploads directly to an `/api/uploads` volume.
+  - Created endpoints for `/auth/login`, `/auth/register`, and `/products`.
+  - Added support for both local image uploads (`imageFile`) and external links (`imageLink`).
+  - Added JWT authentication and bcrypt password hashing.
 
-## 🛠️ Phase 4: Frontend Refactoring
-- [ ] Remove `@supabase/supabase-js` from `package.json`.
-- [ ] Delete or heavily refactor `src/lib/supabase.ts`.
-- [ ] Update `authContext.tsx` to use the new backend auth endpoints.
-- [ ] Refactor all service files (`src/services/*.ts`) to use `fetch` or `axios` instead of Supabase client queries.
-- [ ] Update `.env` (or Vite environment variables) to point to the new backend URL instead of the Supabase project URL.
+### ✅ Phase 3: Frontend Service Refactoring
+- **Action:** Removed `@supabase/supabase-js` from `package.json`.
+- **Action:** Deleted `src/lib/supabase.ts` and the `supabase/` migrations folder.
+- **Action:** Created `.env` file to toggle `VITE_API_URL` between `http://localhost:5000` and production.
+- **Action:** Rewrote all frontend services to use standard `fetch` API:
+  - `authService.ts`: Now uses JWTs and local storage.
+  - `productService.ts`: Now uses `FormData` to send text and image files simultaneously.
+  - `cartService.ts`, `orderService.ts`, `reviewService.ts`: Updated to pass JWT Bearer tokens in headers.
 
-## 🚀 Phase 5: Final Testing & Deployment
-- [ ] Run the full stack: `docker-compose up --build`.
-- [ ] Test user registration and login.
-- [ ] Test product fetching, cart additions, and checkout flow.
-- [ ] Prepare for production (configure reverse proxy, SSL/HTTPS, and secure DB credentials).
+### 🔄 Phase 4: Current Status & Running the App
+- [x] Run `npm uninstall @supabase/supabase-js`
+- [x] Run `npm install` for local IntelliSense.
+- [x] Start Docker engine.
+- [x] Execute `docker-compose up --build`.
+- [ ] Verify image uploads are saving to the `api/uploads` folder locally.
+
+### 🔮 Phase 5: Future Enhancements (To-Do)
+- [ ] Implement the backend API endpoints for Cart operations (`/cart`).
+- [ ] Implement the backend API endpoints for Order operations (`/orders`).
+- [ ] Implement the backend API endpoints for Reviews (`/reviews`).
+- [ ] Set up a persistent volume for the Postgres database so data isn't lost if the container drops.
+- [ ] Add input validation (e.g., Zod or Joi) to the Express API.
