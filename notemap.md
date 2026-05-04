@@ -29,11 +29,12 @@
   - `productService.ts`: Now uses `FormData` to send text and image files simultaneously.
   - `cartService.ts`, `orderService.ts`, `reviewService.ts`: Updated to pass JWT Bearer tokens in headers.
 
-### 🔄 Phase 4: Current Status & Running the App
+### 🔄 Phase 4: Current Status & Troubleshooting
 - [x] Run `npm uninstall @supabase/supabase-js`
 - [x] Run `npm install` for local IntelliSense.
-- [x] Start Docker engine.
-- [x] Execute `docker-compose up --build`.
+- [x] Encountered `docker-compose` CommandNotFoundException in PowerShell.
+- [x] **Fix Applied:** Switched from legacy `docker-compose` (hyphen) to modern Docker Compose V2 syntax: `docker compose up --build`.
+- [ ] Execute `docker compose up --build`.
 - [ ] Verify image uploads are saving to the `api/uploads` folder locally.
 
 ### 🔮 Phase 5: Future Enhancements (To-Do)
