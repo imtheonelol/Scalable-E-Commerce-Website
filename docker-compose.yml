@@ -1,29 +1,42 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # Mount a standard SQL file to initialize your tables
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api:
+    build: 
+      context: ./api
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgres://admin:securepassword@db:5432/ecommerce_db
+    volumes:
+      - ./api:/app
+      - ./uploads:/app/uploads # Volume for local image uploads
+    depends_on:
+      - db
+
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000
     depends_on:
-      - db
-    environment:
-      - VITE_API_URL=http://localhost:8080 # Update this when you build your backend API
-
-  db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: your_secure_password
-      POSTGRES_DB: ecommerce_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      # Mount your existing migrations to initialize the DB automatically
-      - ./supabase/migrations:/docker-entrypoint-initdb.d
+      - api
 
 volumes:
-  postgres_data:
+  pg_data:
