@@ -1,38 +1,47 @@
-import { supabase } from '../lib/supabase';
-import type { CartItemWithProduct } from '../lib/database.types';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-export async function getCartItems(userId: string): Promise<CartItemWithProduct[]> {
-  const { data, error } = await supabase
-    .from('cart_items')
-    .select(`*, products(*, product_images(*))`)
-    .eq('user_id', userId);
-  if (error) throw error;
-  return (data as unknown as CartItemWithProduct[]) || [];
-}
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
 
-export async function addToCart(userId: string, productId: string, quantity = 1): Promise<void> {
-  const { error } = await supabase.from('cart_items').upsert(
-    { user_id: userId, product_id: productId, quantity },
-    { onConflict: 'user_id,product_id', ignoreDuplicates: false }
-  );
-  if (error) throw error;
-}
+export const cartService = {
+  async getCart() {
+    const response = await fetch(`${API_URL}/cart`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch cart');
+    return response.json();
+  },
 
-export async function updateCartItemQuantity(itemId: string, quantity: number): Promise<void> {
-  if (quantity <= 0) {
-    await removeCartItem(itemId);
-    return;
+  async addToCart(productId: number, quantity: number = 1) {
+    const response = await fetch(`${API_URL}/cart`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ product_id: productId, quantity })
+    });
+    if (!response.ok) throw new Error('Failed to add to cart');
+    return response.json();
+  },
+
+  async removeFromCart(cartItemId: number) {
+    const response = await fetch(`${API_URL}/cart/${cartItemId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to remove from cart');
+    return response.json();
+  },
+  
+  async clearCart() {
+    const response = await fetch(`${API_URL}/cart`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to clear cart');
+    return response.json();
   }
-  const { error } = await supabase.from('cart_items').update({ quantity }).eq('id', itemId);
-  if (error) throw error;
-}
-
-export async function removeCartItem(itemId: string): Promise<void> {
-  const { error } = await supabase.from('cart_items').delete().eq('id', itemId);
-  if (error) throw error;
-}
-
-export async function clearCart(userId: string): Promise<void> {
-  const { error } = await supabase.from('cart_items').delete().eq('user_id', userId);
-  if (error) throw error;
-}
+};
